@@ -329,7 +329,7 @@ BYTE Lab1::Negative(BYTE pixel)
 }
 
 
-void Lab1::Create8BitHistogram()
+int Lab1::Create8BitHistogram()
 {
 	this->maxHistogram8 = 0;
 
@@ -354,4 +354,5 @@ void Lab1::Create8BitHistogram()
 			}
 		}
 	}
+	return this->pictureTreshold;
 }

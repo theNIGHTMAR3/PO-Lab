@@ -38,7 +38,7 @@ void HistogramWindow::OnPaint()
 	int maxB = 0;
 	if (bitCount == 8)
 	{
-		image.Create8BitHistogram();
+		int thresholding = image.Create8BitHistogram();
 
 		for (int i = 1; i < 255; i++) {
 
