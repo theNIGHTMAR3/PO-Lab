@@ -14,6 +14,7 @@ public:
 
 	int histogram8[256];
 	int maxHistogram8 = 0;
+	int pictureTreshold= -1;
 
 	Lab1();
 	~Lab1();

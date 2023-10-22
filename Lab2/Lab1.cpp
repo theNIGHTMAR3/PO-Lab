@@ -334,8 +334,25 @@ int Lab1::Create8BitHistogram()
 	this->maxHistogram8 = 0;
 
 	// clear histogram
-	for (int i = 0; i < 156; i++)
+	for (int i = 0; i < 256; i++)
 	{
 		this->histogram8[i] = 0;
 	}
+
+	for (int y = 0; y < this->bitmapInfo->bmiHeader.biHeight; y++)
+	{
+		for (int x = 0; x < this->bitmapInfo->bmiHeader.biWidth; x++)
+		{
+			int pixelValue = GetPixel8(x, y);
+
+			histogram8[pixelValue]++;
+
+			// find max value to save a scale
+			if (this->histogram8[pixelValue] > maxHistogram8)
+			{
+				maxHistogram8 = histogram8[pixelValue];
+			}
+		}
+	}
+	return this->pictureTreshold;
 }

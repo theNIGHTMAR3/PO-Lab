@@ -5,6 +5,7 @@
 #pragma once
 #include "ImgWnd.h"
 #include "afxwin.h"
+#include "HistogramWindow.h"
 
 
 
@@ -35,6 +36,7 @@ protected:
 	CImgWnd m_imgOUT;
 
 	CComboBox m_combo1;
+	HistogramWindow histogramWindow;
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
@@ -51,6 +53,7 @@ protected:
 	void CPODlg::ImageNegative();
 	void CPODlg::ClearOutputImage();
 	void CPODlg::InitializeOutputImage();
+	void CPODlg::DrawHistogram(int bits);
 
 
 public:
@@ -60,4 +63,6 @@ public:
 	afx_msg void OnBnClickedButtonParams();
 	CSliderCtrl sliderValue;
 	CButton textValue;
+	afx_msg void OnCbnSelchangeCombo1();
+	afx_msg void OnBnClickedButton1();
 };

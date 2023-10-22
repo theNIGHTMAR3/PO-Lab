@@ -74,6 +74,9 @@ BEGIN_MESSAGE_MAP(CPODlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_PROCESS, &CPODlg::OnBnClickedButtonProcess)
 	ON_BN_CLICKED(IDC_BUTTON_SAVE, &CPODlg::OnBnClickedButtonSave)
 	ON_BN_CLICKED(IDC_BUTTON_PARAMS, &CPODlg::OnBnClickedButtonParams)
+//	ON_CBN_SELCHANGE(IDC_COMBO1, &CPODlg::On)
+ON_CBN_SELCHANGE(IDC_COMBO1, &CPODlg::OnCbnSelchangeCombo1)
+ON_BN_CLICKED(IDC_BUTTON1, &CPODlg::OnBnClickedButton1)
 END_MESSAGE_MAP()
 
 
@@ -119,6 +122,7 @@ BOOL CPODlg::OnInitDialog()
 
 	m_imgOUT.Create(rDlg, this, IMG_WND_ID_OUT);
 	
+	// lab2
 	m_combo1.AddString(L"convert to greyscale");
 	m_combo1.AddString(L"change brightness");
 	m_combo1.AddString(L"change contrast");
@@ -217,9 +221,7 @@ void CPODlg::OnBnClickedButtonProcess()
 	}
 	else if (sOption == L"change brightness")
 	{
-		sliderValue.SetRange(-100,100);
-
-		
+		//sliderValue.SetRange(-100,100);
 
 		ChangeImageBrightness(sliderValue.GetPos());
 		this->m_imgOUT.loadedFile = true;
@@ -229,7 +231,7 @@ void CPODlg::OnBnClickedButtonProcess()
 	}
 	else if (sOption == L"change contrast")
 	{
-		sliderValue.SetRange(1, 50);
+		//sliderValue.SetRange(1, 50);
 
 
 		ChangeImageContrast((float)sliderValue.GetPos()/10);
@@ -240,7 +242,7 @@ void CPODlg::OnBnClickedButtonProcess()
 	}
 	else if (sOption == L"to power")
 	{
-		sliderValue.SetRange(1, 30);
+		//sliderValue.SetRange(1, 30);
 
 		ExponentImage((float)sliderValue.GetPos()/10);
 		this->m_imgOUT.loadedFile = true;
@@ -426,4 +428,45 @@ BYTE CPODlg::GetGrayscalePixelValue(int x, int y)
 		return (BYTE)(0.299 * rgb.rgbtRed + 0.587 * rgb.rgbtGreen + 0.114 * rgb.rgbtBlue);
 	}
 }
+
+void CPODlg::DrawHistogram(int bits)
+{
+	histogramWindow.image.LoadDIB(m_imgIN.image.filePath);
+	histogramWindow.bitCount = bits;
+	histogramWindow.DoModal();
+}
+
+
+void CPODlg::OnBnClickedButton1()
+{
+	DrawHistogram(m_imgIN.image.bitmapInfo->bmiHeader.biBitCount);
+}
+
+void CPODlg::OnCbnSelchangeCombo1()
+{
+	CString sOption;
+	m_combo1.GetLBText(m_combo1.GetCurSel(), sOption);
+	if (sOption == L"change brightness")
+	{
+		sliderValue.SetRange(-100, 100, true);
+		sliderValue.SetPos(0);
+	}
+	if (sOption == L"change contrast")
+	{
+		sliderValue.SetRange(1, 50, true);
+		sliderValue.SetPos(1);
+	}
+	if (sOption == L"to power")
+	{
+		sliderValue.SetRange(1, 30, true);
+		sliderValue.SetPos(1);
+	}
+	if (sOption == L"negative")
+	{
+		sliderValue.SetRange(1, 2);
+		sliderValue.SetPos(1);
+	}
+}
+
+
 
