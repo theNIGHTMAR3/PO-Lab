@@ -6,6 +6,7 @@
 #include "ImgWnd.h"
 #include "afxwin.h"
 #include "HistogramWindow.h"
+#include "OtsuWindow.h"
 
 
 
@@ -37,6 +38,7 @@ protected:
 
 	CComboBox m_combo1;
 	HistogramWindow histogramWindow;
+	OtsuWindow otsuWindow;
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
@@ -55,8 +57,11 @@ protected:
 	void CPODlg::InitializeOutputImage();
 	void CPODlg::DrawHistogram(int bits);
 	void CPODlg::Threshold(int treshold);
-	void CPODlg::IterativeThreshold(int treshold);
+	void CPODlg::IterativeThreshold();
+	void CPODlg::GradientThreshold();
 	double CPODlg::getAverageValueFromHistogram(int start, int end);
+	void CPODlg::OtsuThreshold();
+	void CPODlg::OtsuLocally();
 
 
 public:

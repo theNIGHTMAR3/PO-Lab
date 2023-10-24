@@ -123,12 +123,12 @@ BOOL CPODlg::OnInitDialog()
 	m_imgOUT.Create(rDlg, this, IMG_WND_ID_OUT);
 	
 	// lab2
-	m_combo1.AddString(L"convert to greyscale");
+	/*m_combo1.AddString(L"convert to greyscale");
 	m_combo1.AddString(L"change brightness");
 	m_combo1.AddString(L"change contrast");
 	m_combo1.AddString(L"to power");
 	m_combo1.AddString(L"negative");
-	m_combo1.SelectString(0, L"change brightness");
+	m_combo1.SelectString(0, L"change brightness");*/
 	// lab3
 	m_combo1.AddString(L"threshold");
 	m_combo1.AddString(L"iterative threshold");
@@ -275,29 +275,29 @@ void CPODlg::OnBnClickedButtonProcess()
 	}
 	else if (sOption == L"iterative threshold")
 	{
-		IterativeThreshold(sliderValue.GetPos());
+		IterativeThreshold();
 		this->m_imgOUT.loadedFile = true;
 		// refresh window
 		InvalidateRect(NULL);
 	}
-	else if (sOption == L"Gradient threshold")
+	else if (sOption == L"gradient threshold")
 	{
-		//GradientThreshold();
+		GradientThreshold();
 		this->m_imgOUT.loadedFile = true;
 		// refresh window
 		InvalidateRect(NULL);
 	}
-	else if (sOption == L"Otsu threshold")
+	else if (sOption == L"otsu threshold")
 	{
-		//OtsuThreshold();
+		OtsuThreshold();
 		this->m_imgOUT.loadedFile = true;
 		// refresh window
 		InvalidateRect(NULL);
-		//otsuWindow.DoModal();
+		otsuWindow.DoModal();
 	}
-	else if (sOption == L"Otsu locally")
+	else if (sOption == L"otsu locally")
 	{
-		//OtsuLocally();
+		OtsuLocally();
 		this->m_imgOUT.loadedFile = true;
 		// refresh window
 		InvalidateRect(NULL);
@@ -554,14 +554,16 @@ double CPODlg::getAverageValueFromHistogram(int start, int end)
 
 	for (int i = start; i < end; i++)
 	{
-		u0 += i * this->m_imgIN.image.histogram8[i];
+		u0 += i * (double)(this->m_imgIN.image.histogram8[i]);
 		p0 += this->m_imgIN.image.histogram8[i];
 	}
+	if (p0 == 0) return 0.0;
+	
 	return u0 / p0;
 }
 
 
-void CPODlg::IterativeThreshold(int treshold)
+void CPODlg::IterativeThreshold()
 {
 	InitializeOutputImage();
 
@@ -609,5 +611,311 @@ void CPODlg::IterativeThreshold(int treshold)
 	}
 }
 
+void CPODlg::GradientThreshold()
+{
+	InitializeOutputImage();
+
+	if (this->m_imgIN.image.bitmapInfoHeader.biBitCount != 8)
+	{
+		return;
+	}
+	this->m_imgIN.image.Create8BitHistogram();
+
+	int p1 = 110;
+	int p2 = 156;
+	int epsilon = 2;
+
+	auto average1 = 0, average2 = 0;
+	int newValue = 0;
+	double gx = 0, gy = 0, gMax = 0, topSum = 0, bottomSum = 0;
+	double threshold = 0;
+
+	// set brightness of each pixel
+	for (int y = 0; y < end.y; y++)
+	{
+		for (int x = 0; x < end.x; x++)
+		{
+			int pixelValue = this->m_imgIN.image.GetPixel8(x, y);
+			
+			gx = m_imgIN.image.GetPixel8(x + 1, y) - m_imgIN.image.GetPixel8(x - 1, y);
+			gy = m_imgIN.image.GetPixel8(x, y + 1) - m_imgIN.image.GetPixel8(x, y - 1);
+
+			gMax = max(gx, gy);
+
+			topSum += pixelValue * gMax;
+			bottomSum += gMax;
+
+			this->m_imgOUT.image.SetPixel8(x, y, newValue);
+		}
+	}
+
+	threshold = topSum / bottomSum;
+
+	for (int y = 0; y < end.y; y++)
+	{
+		for (int x = 0; x < end.x; x++)
+		{
+			int pixelValue = this->m_imgIN.image.GetPixel8(x, y);
+
+			// white if above threshold
+			if (pixelValue > threshold)
+			{
+				this->m_imgOUT.image.SetPixel8(x, y, 255);
+			}
+			// black if above below
+			else
+			{
+				this->m_imgOUT.image.SetPixel8(x, y, 0);
+			}
+		}
+	}
+
+}
+
+void CPODlg::OtsuThreshold()
+{
+	InitializeOutputImage();
+
+	if (this->m_imgIN.image.bitmapInfoHeader.biBitCount != 8)
+	{
+		return;
+	}
+	this->m_imgIN.image.Create8BitHistogram();
+
+	// amount of pixels
+	float n = end.x * end.y;
+	float varMin = FLT_MAX;
+	int bestThreshold = -1;
+
+
+	// for each threshold available
+	for (int t = 0; t <= 255; t++) 
+	{
+		// data below threshold
+		int sumBelow = 0;
+		float avgBelow = 0;
+		float p0 = 0;
+
+		// data above threshold
+		int sumAbove = 0;
+		float avgAbove = 0;
+		float p1 = 0;
+
+		// variance in class 0
+		for (int i = 0; i <= t; i++)
+		{
+			float pI = float(this->m_imgIN.image.histogram8[i]) / n;
+			sumBelow += this->m_imgIN.image.histogram8[i];
+			avgBelow += i * pI;
+			p0 += pI;
+		}
+		// variance in class 1
+		for (int i = t + 1; i <= 255; i++) 
+		{
+			float pI = float(this->m_imgIN.image.histogram8[i]) / n;
+			sumAbove += this->m_imgIN.image.histogram8[i];
+			avgAbove += i * pI;
+			p1 += pI;
+		}
+
+		if (p0 > 0) avgBelow /= p0;
+		if (p1 > 0) avgAbove /= p1;
+
+		// brightness variance in both classes
+		float var2 = 0;
+
+		for (int i = 0; i <= t; i++) {
+			var2 += pow(i - avgBelow, 2) * this->m_imgIN.image.histogram8[i] / n;
+		}
+		for (int i = t + 1; i <= 255; i++) {
+			var2 += pow(i - avgAbove, 2) * this->m_imgIN.image.histogram8[i] / n;
+		}
+
+		if (bestThreshold == -1) 
+		{
+			bestThreshold = t;
+			varMin = var2;
+		}
+		// the lower variance, the better threshold
+		else if (var2 <= varMin) 
+		{
+			bestThreshold = t;
+			varMin = var2;
+		}
+		
+
+		this->otsuWindow.values[t] = 1.0 / var2;	
+	}
+
+	this->histogramWindow.p = bestThreshold;
+	this->otsuWindow.p = bestThreshold;
+
+	for (int y = 0; y < end.y; y++)
+	{
+		for (int x = 0; x < end.x; x++)
+		{
+			int pixel = m_imgIN.image.GetPixel8(x, y);
+			if (pixel > bestThreshold)
+			{
+				this->m_imgOUT.image.SetPixel8(x, y, 255);
+
+			}
+			else
+			{
+				this->m_imgOUT.image.SetPixel8(x, y, 0);
+			}
+		}
+	}
+}
+
+void CPODlg::OtsuLocally()
+{
+	InitializeOutputImage();
+
+	if (this->m_imgIN.image.bitmapInfoHeader.biBitCount != 8)
+	{
+		return;
+	}
+	this->m_imgIN.image.Create8BitHistogram();
+
+
+	// calculating block dimensions
+	float blockWidth = float(end.x) / 10;
+	float blockHeight = float(end.y) / 10;
+
+	for (int xBlock = 0; xBlock < 10; xBlock++)
+	{
+		for (int yBlock = 0; yBlock < 10; yBlock++)
+		{
+			// finding min and max value
+			BYTE minValue = 255;
+			BYTE maxValue = 0;
+
+			// calculate min and max brightness in each block
+			for (int x = int(blockWidth * float(xBlock)); x < int(blockWidth * float(xBlock + 1)); x++) {
+				for (int y = int(blockHeight * float(yBlock)); y < int(blockHeight * float(yBlock + 1)); y++) {
+
+					BYTE pixel = this->m_imgIN.image.GetPixel8(x, y);
+
+					if (pixel > maxValue) maxValue = pixel;
+					if (pixel < minValue) minValue = pixel;
+
+				}
+			}
+
+			// if difference between min and max in each block is greater than 10
+			if (maxValue - minValue >= 10)
+			{
+				// create zeroed histogram for this block
+				int histogram[256] = { 0 };
+
+				for (int x = int(blockWidth * float(xBlock)); x < int(blockWidth * float(xBlock + 1)); x++) {
+					for (int y = int(blockHeight * float(yBlock)); y < int(blockHeight * float(yBlock + 1)); y++) {
+
+						BYTE pixel = this->m_imgIN.image.GetPixel8(x, y);
+
+						histogram[pixel] += 1;
+
+					}
+				}
+				
+				// otsu threshold for this block
+				/////////////////////////////////
+				// amount of pixels
+				float n = end.x * end.y;
+				float varMin = FLT_MAX;
+				int bestThreshold = -1;
+
+
+				// for each threshold available
+				for (int t = 0; t <= 255; t++)
+				{
+					// data below threshold
+					int sumBelow = 0;
+					float avgBelow = 0;
+					float p0 = 0;
+
+					// data above threshold
+					int sumAbove = 0;
+					float avgAbove = 0;
+					float p1 = 0;
+
+					// variance in class 0
+					for (int i = 0; i <= t; i++)
+					{
+						float pI = float(histogram[i]) / n;
+						sumBelow += histogram[i];
+						avgBelow += i * pI;
+						p0 += pI;
+					}
+					// variance in class 1
+					for (int i = t + 1; i <= 255; i++)
+					{
+						float pI = float(histogram[i]) / n;
+						sumAbove += histogram[i];
+						avgAbove += i * pI;
+						p1 += pI;
+					}
+
+					if (p0 > 0) avgBelow /= p0;
+					if (p1 > 0) avgAbove /= p1;
+
+					// brightness variance in both classes
+					float var2 = 0;
+
+					for (int i = 0; i <= t; i++) {
+						var2 += pow(i - avgBelow, 2) * histogram[i] / n;
+					}
+					for (int i = t + 1; i <= 255; i++) {
+						var2 += pow(i - avgAbove, 2) * histogram[i] / n;
+					}
+
+					if (bestThreshold == -1)
+					{
+						bestThreshold = t;
+						varMin = var2;
+					}
+					// the lower variance, the better threshold
+					else if (var2 <= varMin)
+					{
+						bestThreshold = t;
+						varMin = var2;
+					}
+
+
+					for (int x = int(blockWidth * float(xBlock)); x < int(blockWidth * float(xBlock + 1)); x++) 
+					{
+						for (int y = int(blockHeight * float(yBlock)); y < int(blockHeight * float(yBlock + 1)); y++) 
+						{
+							int pixel = this->m_imgIN.image.GetPixel8(x, y);
+							if (pixel > bestThreshold)
+							{
+								this->m_imgOUT.image.SetPixel8(x, y, 255);
+
+							}
+							else
+							{
+								this->m_imgOUT.image.SetPixel8(x, y, 0);
+							}
+						}
+					}
+				}
+				/////////////////////////////////
+			}
+			// if difference between min and max in each block is less than 10
+			else
+			{
+				for (int x = int(blockWidth * float(xBlock)); x < int(blockWidth * float(xBlock + 1)); x++) {
+					for (int y = int(blockHeight * float(yBlock)); y < int(blockHeight * float(yBlock + 1)); y++) {
+
+						BYTE pixel = this->m_imgIN.image.GetPixel8(x, y);
+
+						this->m_imgOUT.image.SetPixel8(x, y, pixel);
+					}
+				}
+			}
+		}		
+	}
+}
 
 

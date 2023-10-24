@@ -103,6 +103,7 @@
     <ClInclude Include="HistogramWindow.h" />
     <ClInclude Include="ImgWnd.h" />
     <ClInclude Include="Lab1.h" />
+    <ClInclude Include="OtsuWindow.h" />
     <ClInclude Include="ParamsDlg.h" />
     <ClInclude Include="PO1.h" />
     <ClInclude Include="PO1Dlg.h" />
@@ -114,6 +115,7 @@
     <ClCompile Include="HistogramWindow.cpp" />
     <ClCompile Include="ImgWnd.cpp" />
     <ClCompile Include="Lab1.cpp" />
+    <ClCompile Include="OtsuWindow.cpp" />
     <ClCompile Include="ParamsDlg.cpp" />
     <ClCompile Include="PO1.cpp" />
     <ClCompile Include="PO1Dlg.cpp" />
